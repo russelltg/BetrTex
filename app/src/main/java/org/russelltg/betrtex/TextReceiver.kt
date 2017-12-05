@@ -3,6 +3,7 @@ package org.russelltg.betrtex
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.provider.Telephony
 
 class TextReceiver : BroadcastReceiver() {
@@ -16,11 +17,12 @@ class TextReceiver : BroadcastReceiver() {
             message += m.messageBody
         }
 
+
         // send the message
 
         // cast to ServerService
         if (ctx is ServerService) {
-            ctx.serv?.textSent(orig, message)
+            ctx.serv?.textReceived(orig, message, messages[0].timestampMillis)
         }
     }
 }
