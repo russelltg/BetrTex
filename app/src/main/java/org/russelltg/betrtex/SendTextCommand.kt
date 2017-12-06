@@ -11,32 +11,21 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
-abstract class Command {
-
-    var service: ServerService
-
-    constructor(service: ServerService) {
-        this.service = service
-    }
-
-    // process a command
-    abstract fun process(message: JsonObject) : JsonElement?
-}
 
 class SendTextCommand(service: ServerService): Command(service) {
 
     val SENT_ACTION = "SMS_SENT_ACTION"
-    val DELIVERED_ACTION = "SMS_DELIVRED_ACTION"
 
     data class SendTextParams (
             val to: String,
             val message: String
     )
 
+    private val receiver: BroadcastReceiver
+
     init {
 
-        // register callbacks
-        service.registerReceiver(object: BroadcastReceiver() {
+        receiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
 
                 val uri = intent?.extras?.getString("uri")
@@ -56,11 +45,18 @@ class SendTextCommand(service: ServerService): Command(service) {
 
                 service.serv?.sentTextSent(number, message, timestamp)
             }
-        }, IntentFilter(SENT_ACTION))
+        }
+
+        // register callbacks
+        service.registerReceiver(receiver, IntentFilter(SENT_ACTION))
 
     }
 
-    override fun process(params: JsonObject): JsonElement? {
+    override fun close() {
+        service.unregisterReceiver(receiver)
+    }
+
+    override fun process(params: JsonElement): JsonElement? {
 
         // from json
         val msg = Gson().fromJson(params, SendTextParams::class.java)
@@ -76,38 +72,3 @@ class SendTextCommand(service: ServerService): Command(service) {
     }
 
 }
-
-class ListConversationsCommand(serv: ServerService): Command(serv) {
-
-    data class Conversation (
-            val threadid: Int,
-            val address: String,
-            val person: String
-    )
-
-    override fun process(message: JsonObject): JsonElement? {
-
-        var c = service.contentResolver?.query(Telephony.Sms.Conversations.CONTENT_URI,
-                arrayOf(Telephony.Sms.Conversations.THREAD_ID, Telephony.Sms.Conversations.ADDRESS, Telephony.Sms.Conversations.PERSON),
-                null, null, null)
-
-        var convos = mutableListOf<Conversation>()
-
-        try {
-            if (c!!.moveToFirst()) {
-                do {
-                    convos.add(Conversation(c!!.getInt(0), c!!.getString(1), c!!.getString(2)))
-
-                } while (c.moveToNext())
-            }
-        } catch(e: Exception) {
-            e.printStackTrace()
-        }
-
-        return Gson().toJsonTree(convos)
-    }
-}
-
-
-
-
