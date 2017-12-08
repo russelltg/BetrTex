@@ -17,7 +17,7 @@ class SendTextCommand(service: ServerService): Command(service) {
     val SENT_ACTION = "SMS_SENT_ACTION"
 
     data class SendTextParams (
-            val to: String,
+            val to: Array<Int>,
             val message: String
     )
 
@@ -31,16 +31,13 @@ class SendTextCommand(service: ServerService): Command(service) {
                 val uri = intent?.extras?.getString("uri")
 
 
-                var c = context?.contentResolver?.query(Uri.parse(uri), arrayOf(Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE, Telephony.Sms.Inbox.PERSON), null, null, null)
+                var c = context?.contentResolver?.query(Uri.parse(uri),
+                        arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE_SENT),
+                        null, null, null)
 
 
                 if (c!!.moveToFirst()) {
-                    val message = c.getString(0)
-                    val timestamp = c.getLong(1)
-                    val person = c.getInt(2)
-
-
-                    service.serv?.sentTextSent(person, message, timestamp)
+                    service.serv?.textReceived(Message(c.getInt(0), c.getInt(1), c.getString(2), c.getLong(3)));
                 }
 
             }
@@ -63,9 +60,15 @@ class SendTextCommand(service: ServerService): Command(service) {
         // build intents
         val sentIntent = PendingIntent.getBroadcast(service, 0, Intent(SENT_ACTION), 0)
 
+        // convert canonical IDS to real numbers
+
+        // TODO: implement this
+        assert(msg.to.size == 1)
+        val number = GetContactInfo(service).process(Gson().toJsonTree(msg.to[0]))!!.asJsonObject["number"].asString
+
         // send it
         // TODO: use multipart
-        service.manager?.sendTextMessage(msg!!.to, null, msg.message, sentIntent, null)
+        service.manager?.sendTextMessage(number, null, msg.message, sentIntent, null)
 
         return null
     }

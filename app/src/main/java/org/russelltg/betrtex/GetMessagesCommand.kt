@@ -15,7 +15,7 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
 
         val cr = service.contentResolver
         var cursor = cr.query(Telephony.Sms.CONTENT_URI,
-            arrayOf(Telephony.Sms.PERSON, Telephony.Sms.BODY, Telephony.Sms.DATE_SENT),
+            arrayOf(Telephony.Sms.PERSON, Telephony.Sms.THREAD_ID, Telephony.Sms.BODY, Telephony.Sms.DATE_SENT),
                 Telephony.Sms.THREAD_ID + "=?",
                 arrayOf(threadID.toString()),
                 Telephony.Sms.DATE_SENT)
@@ -27,7 +27,7 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
             var messages = mutableListOf<Message>()
 
             do {
-                messages.add(Message(cursor.getInt(0), cursor.getString(1), cursor.getLong(2)))
+                messages.add(Message(cursor.getInt(0), cursor.getInt(1), cursor.getString(2), cursor.getLong(3)))
             } while (cursor.moveToNext())
 
             return Gson().toJsonTree(messages)

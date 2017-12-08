@@ -25,17 +25,11 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
     }
 
     // send new texts to the client
-    fun textReceived(person: Int, message: String, timestamp: Long) {
+    fun textReceived(message: Message) {
         // build TextSentMessage
-        val rpcMessage = BuildRPCCall("text-received", -1, Message(person, message, timestamp))
+        val rpcMessage = BuildRPCCall("text-received", -1, message)
 
         // send it to all connected devices
-        propagateMessage(rpcMessage)
-    }
-
-    fun sentTextSent(person: Int, message: String, timestamp: Long) {
-        val rpcMessage = BuildRPCCall("sent-text-sent", -1, Message(person, message, timestamp))
-
         propagateMessage(rpcMessage)
     }
 
@@ -81,7 +75,7 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
                 obj["result"] = returnMessage
                 obj["id"] = id
 
-                conn?.send(Gson().toJson(returnMessage))
+                conn?.send(Gson().toJson(obj))
             }
 
         } else {

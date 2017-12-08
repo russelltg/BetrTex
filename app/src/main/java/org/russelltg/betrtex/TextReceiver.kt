@@ -3,8 +3,6 @@ package org.russelltg.betrtex
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
-import android.net.Uri
 import android.provider.Telephony
 
 class TextReceiver : BroadcastReceiver() {
@@ -21,13 +19,13 @@ class TextReceiver : BroadcastReceiver() {
 
         // get from db
         val cursor = ctx!!.contentResolver.query(Telephony.Sms.Inbox.CONTENT_URI,
-                arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.BODY, Telephony.Sms.DATE_SENT),
+                arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.BODY, Telephony.Sms.DATE_SENT),
                 "address=? AND body=? AND date_sent=?",
                 arrayOf(orig, message, timestamp.toString()), null)
 
 
         if (cursor.moveToFirst() && ctx is ServerService) {
-            ctx.serv?.textReceived(cursor.getInt(0), cursor.getString(1), cursor.getLong(2))
+            ctx.serv?.textReceived(Message(cursor.getInt(0), cursor.getInt(1), cursor.getString(2), cursor.getLong(3)))
         }
 
     }

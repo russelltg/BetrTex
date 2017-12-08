@@ -28,44 +28,56 @@ class GetContactInfo(serv: ServerService) : Command(serv) {
             return null
         }
 
-        val phoneNumber = canonicalAddrCursor.getString(0)
+        val phoneNumber = cleanNumber(canonicalAddrCursor.getString(0))
+
 
         // query
         var contactsCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI, ContactsContract.CommonDataKinds.Phone.NUMBER),
-                ContactsContract.CommonDataKinds.Phone.NUMBER + "=?",
-                arrayOf(phoneNumber), null)
+                null, null, null)
 
         if (contactsCursor.moveToFirst()) {
 
-            val name = contactsCursor.getString(0)
+            do {
+                if (cleanNumber(contactsCursor.getString(2)) == phoneNumber) {
 
-            var base64image = ""
-            if (!contactsCursor.isNull(1)) {
+                    val name = contactsCursor.getString(0)
 
-                val image_uri = Uri.parse(contactsCursor.getString(1))
+                    var base64image = ""
+                    if (!contactsCursor.isNull(1)) {
 
-                var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
+                        val image_uri = Uri.parse(contactsCursor.getString(1))
 
-                // encode as jpeg
-                var stream = ByteArrayOutputStream()
-                bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+                        var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
 
-                // base64 encode it
-                base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
+                        // encode as jpeg
+                        var stream = ByteArrayOutputStream()
+                        bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
 
-            }
+                        // base64 encode it
+                        base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
 
-            val json = JsonObject()
+                    }
 
-            json["name"] = name
-            json["b64_image"] = base64image
-            json["number"] = phoneNumber
+                    val json = JsonObject()
 
-            return json
+                    json["name"] = name
+                    json["b64_image"] = base64image
+                    json["number"] = phoneNumber
+
+                    return json
+                }
+            } while (contactsCursor.moveToNext())
+
         }
 
-        return null
+        // we can at least return number
+        val json = JsonObject()
+
+        json["name"] = ""
+        json["b64_image"] = ""
+        json["number"] = phoneNumber
+        return json
 
     }
 }
