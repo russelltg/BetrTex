@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(requiredPermissions, 123)
         }
 
-        stopService(Intent(this, ServerService::class.java))
-        startService(Intent(this, ServerService::class.java))
+        val stopped = stopService(Intent(this, ServerService::class.java))
+        val comp = startService(Intent(this, ServerService::class.java))
     }
 }

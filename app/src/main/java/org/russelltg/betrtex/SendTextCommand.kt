@@ -31,19 +31,18 @@ class SendTextCommand(service: ServerService): Command(service) {
                 val uri = intent?.extras?.getString("uri")
 
 
-                var c = context?.contentResolver?.query(Uri.parse(uri), arrayOf(Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE, Telephony.Sms.Inbox.ADDRESS), null, null, null)
+                var c = context?.contentResolver?.query(Uri.parse(uri), arrayOf(Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE, Telephony.Sms.Inbox.PERSON), null, null, null)
 
-                var message = ""
-                var timestamp = -1L
-                var number = ""
 
                 if (c!!.moveToFirst()) {
-                    message = c.getString(0)
-                    timestamp = c.getLong(1)
-                    number = c.getString(2)
+                    val message = c.getString(0)
+                    val timestamp = c.getLong(1)
+                    val person = c.getInt(2)
+
+
+                    service.serv?.sentTextSent(person, message, timestamp)
                 }
 
-                service.serv?.sentTextSent(number, message, timestamp)
             }
         }
 

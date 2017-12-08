@@ -1,7 +1,7 @@
 package org.russelltg.betrtex
 
 data class Message (
-        val number: String,
+        val person: Int,
         val message: String,
         val timestamp: Long
 )

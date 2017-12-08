@@ -33,8 +33,15 @@ class ServerService : Service() {
         return Service.START_NOT_STICKY
     }
 
+
+
     override fun onDestroy() {
-        serv?.stop()
+
+        try {
+            serv?.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onBind(intent: Intent): IBinder? {

@@ -1,11 +1,9 @@
 package org.russelltg.betrtex
 
-import android.content.ContentUris
 import android.net.Uri
 import android.provider.Telephony
 import com.google.gson.Gson
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 
 class ListConversationsCommand(serv: ServerService): Command(serv) {
 
@@ -13,10 +11,9 @@ class ListConversationsCommand(serv: ServerService): Command(serv) {
             val threadid: Int,
             val messagecount: Int,
             val snippet: String,
-            val numbers: Array<String>,
+            val addresses: Array<Int>, // canonical addresses
             val read: Boolean
     )
-
     override fun process(params: JsonElement): JsonElement? {
 
         val cr = service.contentResolver!!
@@ -32,22 +29,13 @@ class ListConversationsCommand(serv: ServerService): Command(serv) {
 
                 do {
 
-                    // query each and get phoone number
-                    val phoneNumbers = c.getString(3).split(' ').map{ it.toInt() }.map {
-                        var contactsCursor = cr.query(ContentUris.withAppendedId(Uri.parse("content://mms-sms/canonical-address"), it.toLong()),
-                                arrayOf(Telephony.CanonicalAddressesColumns.ADDRESS),
-                                null, null, null)
-
-                        if (contactsCursor.moveToFirst())
-                            contactsCursor.getString(0)
-                        else
-                            ""
-                    }
+                    // just return canonical addresses
+                    val canonicalAddresses = c.getString(3).split(' ').map { it.toInt() }
 
                     convos.add(Conversation(
                             c.getInt(0),
                             c.getInt(1),
-                            if (c.isNull(2)) "" else c.getString(2), phoneNumbers.toTypedArray(),
+                            if (c.isNull(2)) "" else c.getString(2), canonicalAddresses.toTypedArray(),
                             c.getInt(4) != 0))
 
                 } while (c.moveToNext())

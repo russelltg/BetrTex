@@ -8,7 +8,6 @@ import android.provider.MediaStore
 import android.provider.Telephony
 import android.util.Base64
 import com.github.salomonbrys.kotson.set
-import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import java.io.ByteArrayOutputStream
@@ -16,46 +15,54 @@ import java.io.ByteArrayOutputStream
 class GetContactInfo(serv: ServerService) : Command(serv) {
 
     override fun process(params: JsonElement): JsonElement? {
-        val phoneNumber = cleanNumber(params.asString)
+        val canonicalAddress = params.asInt
 
+        // get the canonical address
+        val cr = service.contentResolver
+
+        var canonicalAddrCursor = cr.query(ContentUris.withAppendedId(Uri.parse("content://mms-sms/canonical-address"), canonicalAddress.toLong()),
+                arrayOf(Telephony.CanonicalAddressesColumns.ADDRESS),
+                null, null, null)
+
+        if (!canonicalAddrCursor.moveToFirst()) {
+            return null
+        }
+
+        val phoneNumber = canonicalAddrCursor.getString(0)
 
         // query
-        val cr = service.contentResolver
         var contactsCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI, ContactsContract.CommonDataKinds.Phone.NUMBER),
-                null,null, null)
+                ContactsContract.CommonDataKinds.Phone.NUMBER + "=?",
+                arrayOf(phoneNumber), null)
 
         if (contactsCursor.moveToFirst()) {
 
-            // find it
-            do {
-                if (phoneNumber == cleanNumber(contactsCursor.getString(2))) {
-                    val name = contactsCursor.getString(0)
+            val name = contactsCursor.getString(0)
 
-                    var base64image = ""
-                    if (!contactsCursor.isNull(1)) {
+            var base64image = ""
+            if (!contactsCursor.isNull(1)) {
 
-                        val image_uri = Uri.parse(contactsCursor.getString(1))
+                val image_uri = Uri.parse(contactsCursor.getString(1))
 
-                        var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
+                var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
 
-                        // encode as jpeg
-                        var stream = ByteArrayOutputStream()
-                        bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+                // encode as jpeg
+                var stream = ByteArrayOutputStream()
+                bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
 
-                        // base64 encode it
-                        base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
+                // base64 encode it
+                base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
 
-                    }
+            }
 
-                    val json = JsonObject()
+            val json = JsonObject()
 
-                    json["name"] = name
-                    json["b64_image"] = base64image
+            json["name"] = name
+            json["b64_image"] = base64image
+            json["number"] = phoneNumber
 
-                    return json
-                }
-            } while(contactsCursor.moveToNext())
+            return json
         }
 
         return null

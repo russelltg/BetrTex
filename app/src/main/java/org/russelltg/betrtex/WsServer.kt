@@ -21,21 +21,20 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
         commands["send-text"] = SendTextCommand(service)
         commands["list-conversations"] = ListConversationsCommand(service)
         commands["contact-info"] = GetContactInfo(service)
+        commands["get-messages"] = GetMessagesCommand(service)
     }
 
-
-
     // send new texts to the client
-    fun textReceived(number: String, message: String, timestamp: Long) {
+    fun textReceived(person: Int, message: String, timestamp: Long) {
         // build TextSentMessage
-        val rpcMessage = BuildRPCCall("text-received", -1, Message(number, message, timestamp))
+        val rpcMessage = BuildRPCCall("text-received", -1, Message(person, message, timestamp))
 
         // send it to all connected devices
         propagateMessage(rpcMessage)
     }
 
-    fun sentTextSent(number: String, message: String, timestamp: Long) {
-        val rpcMessage = BuildRPCCall("sent-text-sent", -1, Message(number, message, timestamp))
+    fun sentTextSent(person: Int, message: String, timestamp: Long) {
+        val rpcMessage = BuildRPCCall("sent-text-sent", -1, Message(person, message, timestamp))
 
         propagateMessage(rpcMessage)
     }
