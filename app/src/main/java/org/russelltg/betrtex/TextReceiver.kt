@@ -17,15 +17,22 @@ class TextReceiver : BroadcastReceiver() {
         }
         val timestamp = messages[0].timestampMillis
 
+        val cr = ctx!!.contentResolver
+
         // get from db
-        val cursor = ctx!!.contentResolver.query(Telephony.Sms.Inbox.CONTENT_URI,
-                arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.BODY, Telephony.Sms.DATE_SENT),
+        val cursor = cr.query(Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.DATE_SENT, Telephony.Sms.READ, Telephony.Sms.BODY),
                 "address=? AND body=? AND date_sent=?",
                 arrayOf(orig, message, timestamp.toString()), null)
 
 
         if (cursor.moveToFirst() && ctx is ServerService) {
-            ctx.serv?.textReceived(Message(cursor.getInt(0), cursor.getInt(1), cursor.getString(2), cursor.getLong(3)))
+            ctx.serv?.textReceived(Message(
+                    person= Person(cursor.getLong(0), cursor.getString(1)),
+                    threadid = cursor.getInt(2),
+                    timestamp = cursor.getLong(3),
+                    read = cursor.getInt(4) != 0,
+                    data = SmsData(cursor.getString(5))))
         }
 
     }

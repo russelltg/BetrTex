@@ -1,8 +1,20 @@
 package org.russelltg.betrtex
 
+sealed class MessageData
+
+data class SmsData(val message: String) : MessageData()
+enum class MmsType {
+    TEXT,
+    IMAGE
+}
+data class MmsData(val type: MmsType, val data: String) : MessageData()
+
+data class Person (val contactid: Long, val number: String)
+
 data class Message (
-        val person: Int,
+        val person: Person,
         val threadid: Int,
-        val message: String,
-        val timestamp: Long
+        val timestamp: Long,
+        val read: Boolean,
+        val data: MessageData
 )

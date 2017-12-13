@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/BetrTex.iml" filepath="$PROJECT_DIR$/.idea/BetrTex.iml" />
       <module fileurl="file://$PROJECT_DIR$/BetrTex.iml" filepath="$PROJECT_DIR$/BetrTex.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

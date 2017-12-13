@@ -4,9 +4,11 @@
 
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+
 
     <application
         android:allowBackup="true"
@@ -26,7 +28,9 @@
         <service
             android:name=".ServerService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
+
+        <service android:name="com.android.mms.transaction.TransactionService"/>
 
         <receiver android:name=".TextReceiver">
             <intent-filter>
