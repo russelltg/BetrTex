@@ -75,7 +75,7 @@ class SendTextCommand(service: ServerService): Command(service) {
 
 //        transaction.setExplicitBroadcastForSentMms(Intent(SENT_ACTION))
         transaction.setExplicitBroadcastForSentSms(Intent(SENT_ACTION))
-        
+
         transaction.sendNewMessage(message, msg.thread)
 
 
