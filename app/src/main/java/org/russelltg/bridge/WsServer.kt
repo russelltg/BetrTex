@@ -27,7 +27,7 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
     // send new texts to the client
     fun textReceived(message: Message) {
         // build TextSentMessage
-        val rpcMessage = BuildRPCCall("text-received", -1, message)
+        val rpcMessage = Gson().toJson(RPCMessage(id = -1, method = "text-received", params = message))
 
         // send it to all connected devices
         propagateMessage(rpcMessage)
@@ -65,7 +65,7 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
 
         // try to find it in commands
         if (commands.containsKey(method)) {
-            var cmd = commands[method]
+            val cmd = commands[method]
 
             try {
                 val returnMessage = cmd?.process(jsonData.get("params"))
@@ -73,7 +73,7 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
 
                 if (returnMessage != null) {
 
-                    var obj = JsonObject()
+                    val obj = JsonObject()
                     obj["jsonrpc"] = 2.0
                     obj["result"] = returnMessage
                     obj["id"] = id

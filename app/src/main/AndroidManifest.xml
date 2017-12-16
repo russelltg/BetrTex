@@ -29,15 +29,10 @@
         <service
             android:name=".ServerService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <service android:name="com.android.mms.transaction.TransactionService"/>
 
-        <receiver android:name=".TextReceiver">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

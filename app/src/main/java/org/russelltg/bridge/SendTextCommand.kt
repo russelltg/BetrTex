@@ -1,6 +1,5 @@
 package org.russelltg.bridge
 
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -13,13 +12,46 @@ import com.klinker.android.send_message.Settings
 import com.klinker.android.send_message.Transaction
 
 
+/**
+ * Command to send a text
+ *
+ * @property service The service to initialize [Command] with
+ *
+ * # Parameters
+ * ```json
+ * {
+ *   "thread": 3, // thread ID
+ *   "numbers": [
+ *      "+11234138537",
+ *      "+12123124121"
+ *   ],
+ *   message: "Hello mum!"
+ * }
+ * ```
+ *
+ * # Returns
+ * ```json
+ * {}
+ * ```
+ *
+ */
 class SendTextCommand(service: ServerService): Command(service) {
 
-    val SENT_ACTION = "SMS_SENT_ACTION"
+    companion object {
+        private const val SENT_ACTION: String = "SMS_SENT_ACTION"
+    }
+
 
     data class SendTextParams (
+
+            // The thread ID (_id in content://mms-sms/conversations)
             val thread: Long,
+
+            // The phone numbers to send to
             val numbers: Array<String>,
+
+            // The message to send
+            // TODO: allow MMS images, audio, etc
             val message: String
     )
 
@@ -27,6 +59,7 @@ class SendTextCommand(service: ServerService): Command(service) {
 
     init {
 
+        // initialize the receiver so we know when the message was sent
         receiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
 
@@ -34,19 +67,21 @@ class SendTextCommand(service: ServerService): Command(service) {
 
                 val cr = context?.contentResolver!!
 
-                var c = cr.query(Uri.parse(uri),
+                val c = cr.query(Uri.parse(uri),
                         arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.DATE_SENT, Telephony.Sms.Inbox.READ, Telephony.Sms.Inbox.BODY),
                         null, null, null)
 
 
                 if (c!!.moveToFirst()) {
-                    service.serv?.textReceived(Message(
+                    service.server?.textReceived(Message(
                             person = Person(c.getLong(0), c.getString(1)),
                             threadid = c.getInt(2),
                             timestamp = c.getLong(3),
                             read = c.getInt(4) != 0,
                             data = SmsData(c.getString(5))))
                 }
+
+                c.close()
 
             }
         }

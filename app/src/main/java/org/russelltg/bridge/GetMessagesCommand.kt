@@ -1,10 +1,13 @@
 package org.russelltg.bridge
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.provider.Telephony
+import android.util.Base64
 import com.google.gson.Gson
 import com.google.gson.JsonElement
-import android.util.Base64
-import java.io.*
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 
 private fun getMmsText(id: Int, cr: ContentResolver): String {
@@ -48,16 +51,15 @@ private fun getPersonPart(id: Int, cr: ContentResolver): Person? {
     return ret
 }
 
-private fun b64EncodePart(partid: Int, cr: ContentResolver): String {
-    val partURI = Uri.parse("content://mms/part/" + partid)
+private fun b64EncodePart(partID: Int, cr: ContentResolver): String {
+    val partURI = Uri.parse("content://mms/part/" + partID)
     val inStream = cr.openInputStream(partURI)
 
     // base64 encode it
     return Base64.encodeToString(inStream.readBytes(), 0)
 }
 
-class GetMessagesCommand(serv: ServerService): Command(serv) {
-
+class GetMessagesCommand(service: ServerService) : Command(service) {
 
     override fun process(params: JsonElement): JsonElement? {
 
@@ -66,7 +68,7 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
 
         val cr = service.contentResolver
 
-        var cursor = cr.query(Uri.withAppendedPath(Telephony.MmsSms.CONTENT_CONVERSATIONS_URI, threadID.toString()),
+        val cursor = cr.query(Uri.withAppendedPath(Telephony.MmsSms.CONTENT_CONVERSATIONS_URI, threadID.toString()),
             arrayOf(Telephony.MmsSms._ID, "ct_t"),
                 null, null, null)
 
@@ -77,11 +79,9 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                 cursor.moveToPosition(cursor.count - 100)
             }
 
-            var messages = mutableListOf<Message>()
+            val messages = mutableListOf<Message>()
 
             do {
-
-
                 // https://stackoverflow.com/questions/3012287/how-to-read-mms-data-in-android
                 val messageID = cursor.getInt(0)
                 val type = cursor.getString(1)
@@ -100,6 +100,8 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                     val read = messageCursor.getInt(0) != 0
                     val timestamp = messageCursor.getLong(1)
 
+                    // close the cursor--we're done here
+                    messageCursor.close()
 
                     // get number
                     val person = getPersonPart(messageID, cr)!!
@@ -113,13 +115,13 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                     }
 
                     do {
-                        val partid = partCursor.getInt(0)
+                        val partID = partCursor.getInt(0)
                         val contentType = partCursor.getString(1)
                         val data = partCursor.getString(2)
 
                         val messageData = when (contentType) {
                             "text/plain" -> {
-                                val body = if (data != null) getMmsText(partid, cr) else partCursor.getString(3)
+                                val body = if (data != null) getMmsText(partID, cr) else partCursor.getString(3)
 
                                 MmsData(
                                     type = MmsType.TEXT,
@@ -128,24 +130,24 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                             "image/png" -> {
                                 MmsData(
                                         type = MmsType.IMAGE,
-                                        data = "data:image/png;base64, " + b64EncodePart(partid, cr))
+                                        data = "data:image/png;base64, " + b64EncodePart(partID, cr))
 
                             }
                             "image/bmp" -> {
                                 MmsData(
                                         type = MmsType.IMAGE,
-                                        data = "data:image/bmp;base64, " + b64EncodePart(partid, cr))
+                                        data = "data:image/bmp;base64, " + b64EncodePart(partID, cr))
 
                             }
                             "image/jpeg", "image/jpg" -> {
                                 MmsData(
                                     type = MmsType.IMAGE,
-                                    data = "data:image/jpeg;base64, " + b64EncodePart(partid, cr))
+                                        data = "data:image/jpeg;base64, " + b64EncodePart(partID, cr))
                             }
                             "image/gif" -> {
                                 MmsData(
                                     type = MmsType.IMAGE,
-                                    data = "data:image/gif;base64, " + b64EncodePart(partid, cr))
+                                        data = "data:image/gif;base64, " + b64EncodePart(partID, cr))
                             }
                             else -> null
                         }
@@ -161,6 +163,8 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                         }
 
                     } while (partCursor.moveToNext())
+
+                    partCursor.close()
 
                 } else {
                     // sms
@@ -183,9 +187,13 @@ class GetMessagesCommand(serv: ServerService): Command(serv) {
                                 data = SmsData(messageCursor.getString(4))
                         ))
                     }
+
+                    messageCursor.close()
                 }
 
             } while (cursor.moveToNext())
+
+            cursor.close()
 
             return Gson().toJsonTree(messages)
         }

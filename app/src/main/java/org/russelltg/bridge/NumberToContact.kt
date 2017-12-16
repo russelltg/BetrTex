@@ -1,8 +1,16 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import android.content.ContentResolver
 import android.provider.ContactsContract
 
+/**
+ * From a phone number, get the contact ID
+ *
+ * @param num The phone number
+ * @param cr the ContentResolver to query with
+ *
+ * @return The contact ID, or null if it wasn't found
+ */
 fun numberToContact(num: String, cr: ContentResolver): Long? {
 
     // get contact id from phone number
@@ -15,5 +23,11 @@ fun numberToContact(num: String, cr: ContentResolver): Long? {
         return null
     }
 
-    return contactsCursor.getLong(0)
+    // cache the result so we can close the cursor
+    val ret = contactsCursor.getLong(0)
+
+    // close that cursor
+    contactsCursor.close()
+
+    return ret
 }

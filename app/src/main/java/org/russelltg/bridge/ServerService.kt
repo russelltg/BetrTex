@@ -4,27 +4,25 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import android.telephony.SmsManager
 import java.net.InetSocketAddress
 
 class ServerService : Service() {
 
-    var serv: WsServer?= null
-    var manager: SmsManager? = null
+    var server: WsServer? = null
+
+    private var textReceiver: TextReceiver? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        // get the sms manager
-        manager = SmsManager.getDefault()
-
         // start the text receiver
-        registerReceiver(TextReceiver(), IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+        textReceiver = TextReceiver(this)
+        registerReceiver(textReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
 
         // start ws server
         try {
-            serv = WsServer(InetSocketAddress("0.0.0.0", 14563), this)
+            server = WsServer(InetSocketAddress("0.0.0.0", 14563), this)
 
-            serv?.start()
+            server?.start()
 
         } catch(e: Exception) {
             e.printStackTrace()
@@ -37,8 +35,10 @@ class ServerService : Service() {
 
     override fun onDestroy() {
 
+        unregisterReceiver(textReceiver)
+
         try {
-            serv?.stop()
+            server?.stop()
         } catch (e: Exception) {
             e.printStackTrace()
         }
