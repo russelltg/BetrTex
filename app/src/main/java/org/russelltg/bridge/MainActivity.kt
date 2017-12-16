@@ -1,4 +1,4 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import android.Manifest
 import android.content.Intent

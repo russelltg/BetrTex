@@ -1,4 +1,4 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -9,7 +9,6 @@ import android.net.Uri
 import android.provider.Telephony
 import com.google.gson.Gson
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 
 
 class SendTextCommand(service: ServerService): Command(service) {
@@ -32,12 +31,12 @@ class SendTextCommand(service: ServerService): Command(service) {
 
 
                 var c = context?.contentResolver?.query(Uri.parse(uri),
-                        arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE_SENT),
+                        arrayOf(Telephony.Sms.Inbox._ID, Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE_SENT),
                         null, null, null)
 
 
                 if (c!!.moveToFirst()) {
-                    service.serv?.textReceived(Message(c.getInt(0), c.getInt(1), c.getString(2), c.getLong(3)));
+                    service.serv?.textReceived(Message(c.getInt(0), c.getInt(1), c.getInt(2), c.getString(3), c.getLong(4)))
                 }
 
             }

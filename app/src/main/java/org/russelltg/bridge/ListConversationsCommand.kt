@@ -1,4 +1,4 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import android.net.Uri
 import android.provider.Telephony

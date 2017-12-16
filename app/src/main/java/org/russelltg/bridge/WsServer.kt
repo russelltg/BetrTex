@@ -1,4 +1,4 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import com.github.salomonbrys.kotson.set
 import com.google.gson.Gson
@@ -68,15 +68,13 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
             var cmd = commands[method]
             val returnMessage = cmd?.process(jsonData.get("params"))
 
-            if (returnMessage != null) {
+            var obj = JsonObject()
+            obj["jsonrpc"] = 2.0
+            obj["result"] = returnMessage ?: JsonObject()
+            obj["id"] = id
 
-                var obj = JsonObject()
-                obj["jsonrpc"] = 2.0
-                obj["result"] = returnMessage
-                obj["id"] = id
+            conn?.send(Gson().toJson(obj))
 
-                conn?.send(Gson().toJson(obj))
-            }
 
         } else {
             conn?.send("""

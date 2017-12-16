@@ -1,4 +1,4 @@
-package org.russelltg.betrtex
+package org.russelltg.bridge
 
 import android.content.ContentUris
 import android.graphics.Bitmap

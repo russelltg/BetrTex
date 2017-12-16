@@ -7,7 +7,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 25
     defaultConfig {
-        applicationId "org.russelltg.betrtex"
+        applicationId "org.russelltg.bridge"
         minSdkVersion 23
         targetSdkVersion 25
         versionCode 1
