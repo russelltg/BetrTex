@@ -9,6 +9,8 @@ import android.net.Uri
 import android.provider.Telephony
 import com.google.gson.Gson
 import com.google.gson.JsonElement
+import com.klinker.android.send_message.Settings
+import com.klinker.android.send_message.Transaction
 
 
 class SendTextCommand(service: ServerService): Command(service) {
@@ -16,7 +18,8 @@ class SendTextCommand(service: ServerService): Command(service) {
     val SENT_ACTION = "SMS_SENT_ACTION"
 
     data class SendTextParams (
-            val to: Array<Int>,
+            val thread: Long,
+            val numbers: Array<String>,
             val message: String
     )
 
@@ -29,14 +32,20 @@ class SendTextCommand(service: ServerService): Command(service) {
 
                 val uri = intent?.extras?.getString("uri")
 
+                val cr = context?.contentResolver!!
 
-                var c = context?.contentResolver?.query(Uri.parse(uri),
-                        arrayOf(Telephony.Sms.Inbox._ID, Telephony.Sms.Inbox.PERSON, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.BODY, Telephony.Sms.Inbox.DATE_SENT),
+                var c = cr.query(Uri.parse(uri),
+                        arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.DATE_SENT, Telephony.Sms.Inbox.READ, Telephony.Sms.Inbox.BODY),
                         null, null, null)
 
 
                 if (c!!.moveToFirst()) {
-                    service.serv?.textReceived(Message(c.getInt(0), c.getInt(1), c.getInt(2), c.getString(3), c.getLong(4)))
+                    service.serv?.textReceived(Message(
+                            person = Person(c.getLong(0), c.getString(1)),
+                            threadid = c.getInt(2),
+                            timestamp = c.getLong(3),
+                            read = c.getInt(4) != 0,
+                            data = SmsData(c.getString(5))))
                 }
 
             }
@@ -53,21 +62,23 @@ class SendTextCommand(service: ServerService): Command(service) {
 
     override fun process(params: JsonElement): JsonElement? {
 
+
         // from json
         val msg = Gson().fromJson(params, SendTextParams::class.java)
 
-        // build intents
-        val sentIntent = PendingIntent.getBroadcast(service, 0, Intent(SENT_ACTION), 0)
+        val s = Settings()
 
-        // convert canonical IDS to real numbers
+        s.useSystemSending = true
 
-        // TODO: implement this
-        assert(msg.to.size == 1)
-        val number = GetContactInfo(service).process(Gson().toJsonTree(msg.to[0]))!!.asJsonObject["number"].asString
+        val transaction = Transaction(service, s)
+        val message = com.klinker.android.send_message.Message(msg.message, msg.numbers)
 
-        // send it
-        // TODO: use multipart
-        service.manager?.sendTextMessage(number, null, msg.message, sentIntent, null)
+//        transaction.setExplicitBroadcastForSentMms(Intent(SENT_ACTION))
+        transaction.setExplicitBroadcastForSentSms(Intent(SENT_ACTION))
+
+        transaction.sendNewMessage(message, msg.thread)
+
+
 
         return null
     }

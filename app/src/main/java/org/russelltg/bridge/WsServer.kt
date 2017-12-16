@@ -66,15 +66,24 @@ class WsServer(addr : InetSocketAddress, serv: ServerService) : WebSocketServer(
         // try to find it in commands
         if (commands.containsKey(method)) {
             var cmd = commands[method]
-            val returnMessage = cmd?.process(jsonData.get("params"))
 
-            var obj = JsonObject()
-            obj["jsonrpc"] = 2.0
-            obj["result"] = returnMessage ?: JsonObject()
-            obj["id"] = id
+            try {
+                val returnMessage = cmd?.process(jsonData.get("params"))
 
-            conn?.send(Gson().toJson(obj))
 
+                if (returnMessage != null) {
+
+                    var obj = JsonObject()
+                    obj["jsonrpc"] = 2.0
+                    obj["result"] = returnMessage
+                    obj["id"] = id
+
+                    conn?.send(Gson().toJson(obj))
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
         } else {
             conn?.send("""

@@ -15,59 +15,44 @@ import java.io.ByteArrayOutputStream
 class GetContactInfo(serv: ServerService) : Command(serv) {
 
     override fun process(params: JsonElement): JsonElement? {
-        val canonicalAddress = params.asInt
+        val contactID = params.asInt
 
         // get the canonical address
         val cr = service.contentResolver
 
-        var canonicalAddrCursor = cr.query(ContentUris.withAppendedId(Uri.parse("content://mms-sms/canonical-address"), canonicalAddress.toLong()),
-                arrayOf(Telephony.CanonicalAddressesColumns.ADDRESS),
-                null, null, null)
-
-        if (!canonicalAddrCursor.moveToFirst()) {
-            return null
-        }
-
-        val phoneNumber = cleanNumber(canonicalAddrCursor.getString(0))
-
 
         // query
-        var contactsCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        var contactsCursor = cr.query(Uri.withAppendedPath(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, contactID.toString()),
                 arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI, ContactsContract.CommonDataKinds.Phone.NUMBER),
                 null, null, null)
 
         if (contactsCursor.moveToFirst()) {
 
-            do {
-                if (cleanNumber(contactsCursor.getString(2)) == phoneNumber) {
+            val name = contactsCursor.getString(0)
 
-                    val name = contactsCursor.getString(0)
+            var base64image = ""
+            if (!contactsCursor.isNull(1)) {
 
-                    var base64image = ""
-                    if (!contactsCursor.isNull(1)) {
+                val image_uri = Uri.parse(contactsCursor.getString(1))
 
-                        val image_uri = Uri.parse(contactsCursor.getString(1))
+                var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
 
-                        var bm = MediaStore.Images.Media.getBitmap(cr, image_uri)
+                // encode as jpeg
+                var stream = ByteArrayOutputStream()
+                bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
 
-                        // encode as jpeg
-                        var stream = ByteArrayOutputStream()
-                        bm.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+                // base64 encode it
+                base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
 
-                        // base64 encode it
-                        base64image = "data:image/jpeg;base64, " + Base64.encodeToString(stream.toByteArray(), 0)
+            }
 
-                    }
+            val json = JsonObject()
 
-                    val json = JsonObject()
+            json["name"] = name
+            json["b64_image"] = base64image
 
-                    json["name"] = name
-                    json["b64_image"] = base64image
-                    json["number"] = phoneNumber
+            return json
 
-                    return json
-                }
-            } while (contactsCursor.moveToNext())
 
         }
 
@@ -76,7 +61,6 @@ class GetContactInfo(serv: ServerService) : Command(serv) {
 
         json["name"] = ""
         json["b64_image"] = ""
-        json["number"] = phoneNumber
         return json
 
     }
