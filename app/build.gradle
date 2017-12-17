@@ -42,14 +42,24 @@ task buildBackground(type: Exec) {
 }
 
 task buildForeground(type: Exec) {
+    inputs.files 'foreground.svg', 'generate-icons.sh'
+    outputs.files (*['hdpi', 'mdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].collect { "src/main/res/drawable-${it}/ic_launcher.png" })
+
+    workingDir '.'
+    commandLine 'bash', 'generate-icons.sh', 'foreground.svg', 'foreground'
+
+}
+
+task buildIcon(type: Exec) {
     inputs.files 'icon.svg', 'generate-icons.sh'
     outputs.files (*['hdpi', 'mdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].collect { "src/main/res/drawable-${it}/ic_launcher.png" })
 
     workingDir '.'
-    commandLine 'bash', 'generate-icons.sh', 'icon.svg', 'ic_launcher'
+    commandLine 'bash', 'generate-icons.sh', 'icon.svg', 'icon'
 
 }
 
 
 
-preBuild.dependsOn buildBackground, buildForeground
+
+preBuild.dependsOn buildBackground, buildForeground, buildIcon
