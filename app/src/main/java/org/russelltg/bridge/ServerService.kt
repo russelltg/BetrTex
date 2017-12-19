@@ -1,9 +1,13 @@
 package org.russelltg.bridge
 
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Handler
 import android.os.IBinder
+import android.os.Message
+import android.support.v4.app.NotificationCompat
 import java.net.InetSocketAddress
 
 class ServerService : Service() {
@@ -12,8 +16,7 @@ class ServerService : Service() {
 
     private var textReceiver: TextReceiver? = null
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
+    override fun onCreate() {
         // start the text receiver
         textReceiver = TextReceiver(this)
         registerReceiver(textReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
@@ -27,8 +30,10 @@ class ServerService : Service() {
         } catch(e: Exception) {
             e.printStackTrace()
         }
+    }
 
-        return Service.START_NOT_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
     }
 
 

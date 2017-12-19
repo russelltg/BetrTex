@@ -15,6 +15,10 @@ class GetContactInfo(serv: ServerService) : Command(serv) {
     override fun process(params: JsonElement): JsonElement? {
         val contactID = params.asInt
 
+        if (contactID == -1) {
+            return null
+        }
+
         val cr = service.contentResolver
 
         // query

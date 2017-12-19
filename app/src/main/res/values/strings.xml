@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Bridge</string>
+    <string name="channel_name">Bridge Notifications</string>
+    <string name="ip_address">IP Address: %s</string>
+    <string name="port">Port: %d</string>
+    <string name="new_connection">New Connection</string>
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+    <string name="connection_from">Connection from %s</string>
 </resources>

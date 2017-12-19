@@ -1,17 +1,13 @@
 package org.russelltg.bridge
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.Telephony
 import kotlinx.android.synthetic.main.activity_main.*
 import java.net.NetworkInterface
-import java.net.NetworkInterface.getNetworkInterfaces
 import java.util.*
-
 
 fun getIP(): String? {
     val interfaces = NetworkInterface.getNetworkInterfaces()
@@ -33,12 +29,11 @@ fun getIP(): String? {
 
 }
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
 
         val requiredPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS)
 
@@ -46,17 +41,15 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(requiredPermissions, 123)
         }
 
-        stopService(Intent(this, ServerService::class.java))
         startService(Intent(this, ServerService::class.java))
 
         // get IP
         val ip = getIP()
 
         if (ip != null) {
-            ipView.setText("IP Address: " + ip)
+            ipView.text = resources.getString(R.string.ip_address, ip)
         }
 
-        portView.setText("Port: 14563")
-
+        portView.text = resources.getString(R.string.port, 14563)
     }
 }
