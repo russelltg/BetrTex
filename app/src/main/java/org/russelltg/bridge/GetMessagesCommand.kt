@@ -9,9 +9,14 @@ import com.google.gson.JsonElement
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-
-private fun getMmsText(id: Int, cr: ContentResolver): String {
-    val partURI = Uri.parse("content://mms/part/" + id)
+/**
+ * Extract MMS text data from a part
+ *
+ * @param partID The part ID in `content://mms/part`
+ * @param cr The content resolver to get the part data with
+ */
+private fun getMmsText(partID: Int, cr: ContentResolver): String {
+    val partURI = Uri.parse("content://mms/part/" + partID)
     val sb = StringBuilder()
 
     val stream = cr.openInputStream(partURI)
@@ -30,27 +35,48 @@ private fun getMmsText(id: Int, cr: ContentResolver): String {
     return sb.toString()
 }
 
-private fun getPersonPart(id: Int, cr: ContentResolver): Person? {
+/**
+ * Get the person sending an MMS part
+ *
+ * @param partID The MMS part ID
+ * @param cr The content resolver to fetch the data with
+ *
+ * @return The
+ */
+private fun getPersonPart(partID: Int, cr: ContentResolver): Person? {
 
     // construct uri
-    val uriAddress = Uri.withAppendedPath(Uri.withAppendedPath(Telephony.Mms.CONTENT_URI, id.toString()), "addr")
+    val uriAddress = Uri.withAppendedPath(Uri.withAppendedPath(Telephony.Mms.CONTENT_URI, partID.toString()), "addr")
 
-    val cAdd = cr.query(uriAddress, arrayOf(Telephony.Mms.Addr.CONTACT_ID, Telephony.Mms.Addr.ADDRESS),
-            "msg_id=" + id, null, null)
+    val cursorAddress = cr.query(uriAddress, arrayOf(Telephony.Mms.Addr.CONTACT_ID, Telephony.Mms.Addr.ADDRESS),
+            "msg_id=" + partID, null, null)
 
+    // if the entry was found
+    if (cursorAddress.moveToFirst()) {
 
-    var ret: Person? = null
+        // cache a person so we can close the cursor
+        val ret = Person(
+                contactID = cursorAddress.getLong(0),
+                number = cursorAddress.getString(1))
 
-    if (cAdd!!.moveToFirst()) {
-        do {
-            ret = Person(cAdd.getLong(0), cAdd.getString(1))
-        } while (cAdd.moveToNext())
+        // close the cursor
+        cursorAddress.close()
+
+        return ret
     }
-    cAdd.close()
 
-    return ret
+    // if moveToFirst failed
+    return null
 }
 
+/**
+ * Base64 encode an image from an MMS part
+ *
+ * @param partID The MMS part ID
+ * @param cr The content resolver to open the URI with
+ *
+ * @return Base64 encoded string containing an image
+ */
 private fun b64EncodePart(partID: Int, cr: ContentResolver): String {
     val partURI = Uri.parse("content://mms/part/" + partID)
     val inStream = cr.openInputStream(partURI)
@@ -156,7 +182,7 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                             messages.add(Message(
                                     person = person,
                                     read = read,
-                                    threadid = threadID,
+                                    threadID = threadID,
                                     timestamp = timestamp,
                                     data = messageData
                             ))
@@ -169,20 +195,19 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                 } else {
                     // sms
                     val messageCursor = cr.query(Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, messageID.toString()),
-                            arrayOf(Telephony.Sms.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.READ, Telephony.Sms.DATE, Telephony.Sms.BODY), null, null, null)
+                            arrayOf(Telephony.Sms.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.READ, Telephony.Sms.DATE, Telephony.Sms.BODY),
+                            null, null, null)
 
 
                     if (messageCursor.moveToFirst()) {
 
                         val num = messageCursor.getString(1)
-
                         val p = messageCursor.getInt(0)
-
 
                         messages.add(Message(
                                 person= if (p == 0) Person(0, "") else Person(numberToContact(num, cr)?: -1, num),
                                 read = messageCursor.getInt(2) != 0,
-                                threadid = threadID,
+                                threadID = threadID,
                                 timestamp = messageCursor.getLong(3),
                                 data = SmsData(messageCursor.getString(4))
                         ))

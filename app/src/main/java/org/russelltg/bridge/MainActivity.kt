@@ -7,26 +7,21 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_main.*
 import java.net.NetworkInterface
-import java.util.*
+import java.util.Collections
 
 fun getIP(): String? {
-    val interfaces = NetworkInterface.getNetworkInterfaces()
-    for (intf in interfaces) {
-        val addrs = Collections.list(intf.getInetAddresses())
-        for (addr in addrs) {
-            if (!addr.isLoopbackAddress()) {
-                val sAddr = addr.getHostAddress()
-                //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                val isIPv4 = sAddr.indexOf(':') < 0
+    for (inter in NetworkInterface.getNetworkInterfaces()) {
+        for (address in Collections.list(inter.inetAddresses)) {
+            if (!address.isLoopbackAddress) {
+                val hostAddress = address.hostAddress
+                val isIPv4 = hostAddress.indexOf(':') < 0
                 if (isIPv4) {
-                    return sAddr
+                    return hostAddress
                 }
-
             }
         }
     }
     return null
-
 }
 
 class MainActivity : Activity() {

@@ -1,5 +1,7 @@
 package org.russelltg.bridge
 
+import com.google.gson.annotations.SerializedName
+
 sealed class MessageData
 
 data class SmsData(val message: String) : MessageData()
@@ -9,11 +11,17 @@ enum class MmsType {
 }
 data class MmsData(val type: MmsType, val data: String) : MessageData()
 
-data class Person (val contactid: Long, val number: String)
+data class Person (
+        @SerializedName("contactid")
+        val contactID: Long,
+        val number: String
+)
 
 data class Message (
         val person: Person,
-        val threadid: Int,
+
+        @SerializedName("threadid")
+        val threadID: Int,
         val timestamp: Long,
         val read: Boolean,
         val data: MessageData

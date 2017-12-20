@@ -5,12 +5,19 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.util.Base64
-import com.github.salomonbrys.kotson.set
+import com.google.gson.Gson
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
+import com.google.gson.annotations.SerializedName
 import java.io.ByteArrayOutputStream
 
-class GetContactInfo(serv: ServerService) : Command(serv) {
+class GetContactInfo(service: ServerService) : Command(service) {
+
+    data class ContactInfo(
+            val name: String,
+
+            @SerializedName("b64_image")
+            val b64Image: String
+    )
 
     override fun process(params: JsonElement): JsonElement? {
         val contactID = params.asInt
@@ -48,21 +55,14 @@ class GetContactInfo(serv: ServerService) : Command(serv) {
                 }
             }
 
-            val json = JsonObject()
-
-            json["name"] = name
-            json["b64_image"] = base64image
+            val contactInfo = ContactInfo(name = name, b64Image = base64image)
 
             // free the cursor
             contactsCursor.close()
 
-            return json
+            return Gson().toJsonTree(contactInfo)
         }
 
-        val json = JsonObject()
-
-        json["name"] = ""
-        json["b64_image"] = ""
-        return json
+        return Gson().toJsonTree(ContactInfo(name = "", b64Image = ""))
     }
 }
