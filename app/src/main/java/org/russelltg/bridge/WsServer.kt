@@ -222,8 +222,12 @@ class WsServer(addr : InetSocketAddress, val service: ServerService) : WebSocket
 
     // send a message to all connected clients
     private fun propagateMessage(message: String) {
-        for (conn in verifiedConnections) {
-            conn.value.send(message)
+        try {
+            for (conn in verifiedConnections) {
+                conn.value.send(message)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
