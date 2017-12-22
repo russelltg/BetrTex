@@ -1,25 +1,26 @@
 package org.russelltg.bridge
 
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Handler
 import android.os.IBinder
-import android.os.Message
-import android.support.v4.app.NotificationCompat
+import android.provider.Telephony
 import java.net.InetSocketAddress
 
 class ServerService : Service() {
 
     var server: WsServer? = null
 
-    private var textReceiver: TextReceiver? = null
+    private var smsReceiver: SmsReceiver? = null
+    private var mmsReceiver: MmsReceiver? = null
 
     override fun onCreate() {
         // start the text receiver
-        textReceiver = TextReceiver(this)
-        registerReceiver(textReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+        smsReceiver = SmsReceiver(this)
+        mmsReceiver = MmsReceiver(this)
+
+        registerReceiver(smsReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+        registerReceiver(smsReceiver, IntentFilter("android.provider.Telephony.WAP_PUSH_RECEIVED"))
 
         // start ws server
         try {
@@ -40,7 +41,7 @@ class ServerService : Service() {
 
     override fun onDestroy() {
 
-        unregisterReceiver(textReceiver)
+        unregisterReceiver(smsReceiver)
 
         try {
             server?.stop()

@@ -18,8 +18,9 @@ data class Person (
 )
 
 data class Message (
+        // the ID of the message in the conversation. 0 would be the first message
+        val id: Int,
         val person: Person,
-
         @SerializedName("threadid")
         val threadID: Int,
         val timestamp: Long,

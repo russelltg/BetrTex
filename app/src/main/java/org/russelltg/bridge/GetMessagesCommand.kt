@@ -1,13 +1,16 @@
 package org.russelltg.bridge
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.Telephony
-import android.util.Base64
+import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.google.gson.JsonElement
+import com.google.gson.annotations.SerializedName
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.Integer.min
 
 /**
  * Extract MMS text data from a part
@@ -69,41 +72,39 @@ private fun getPersonPart(partID: Int, cr: ContentResolver): Person? {
     return null
 }
 
-/**
- * Base64 encode an image from an MMS part
- *
- * @param partID The MMS part ID
- * @param cr The content resolver to open the URI with
- *
- * @return Base64 encoded string containing an image
- */
-private fun b64EncodePart(partID: Int, cr: ContentResolver): String {
-    val partURI = Uri.parse("content://mms/part/" + partID)
-    val inStream = cr.openInputStream(partURI)
-
-    // base64 encode it
-    return Base64.encodeToString(inStream.readBytes(), 0)
-}
-
 class GetMessagesCommand(service: ServerService) : Command(service) {
 
+    data class Params (
+            @SerializedName("threadid")
+            val threadID: Int,
+            val from: Int,
+            val to: Int
+    )
+
+    @SuppressLint("NewApi")
     override fun process(params: JsonElement): JsonElement? {
 
-        val threadID = params.asInt
-
+        val parameters = Gson().fromJson<Params>(params)
 
         val cr = service.contentResolver
 
-        val cursor = cr.query(Uri.withAppendedPath(Telephony.MmsSms.CONTENT_CONVERSATIONS_URI, threadID.toString()),
+        val cursor = cr.query(Uri.withAppendedPath(Telephony.MmsSms.CONTENT_CONVERSATIONS_URI, parameters.threadID.toString()),
             arrayOf(Telephony.MmsSms._ID, "ct_t"),
                 null, null, null)
 
         if (cursor.moveToFirst()) {
 
-            // limit to last 100
-            if (cursor.count > 100) {
-                cursor.moveToPosition(cursor.count - 100)
+            // clamp the end
+            val to = Integer.max(parameters.to, cursor.count)
+
+            // make sure the range is valid
+            if (parameters.from > to) {
+                return null
             }
+
+            // start at currentID
+            var currentID = parameters.from
+            cursor.moveToPosition(currentID)
 
             val messages = mutableListOf<Message>()
 
@@ -116,10 +117,11 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                     // mms
 
                     // get read
-                    val messageCursor = cr.query(Telephony.Mms.CONTENT_URI,
-                            arrayOf(Telephony.Mms.READ, Telephony.Mms.DATE), Telephony.Mms._ID + "=" + messageID, null, null)
+                    val messageCursor = cr.query(Uri.withAppendedPath(Telephony.Mms.CONTENT_URI, messageID.toString()),
+                            arrayOf(Telephony.Mms.READ, Telephony.Mms.DATE), null, null, null)
 
                     if (!messageCursor.moveToFirst()) {
+                        currentID++
                         continue
                     }
 
@@ -137,6 +139,7 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                             arrayOf(Telephony.Mms.Part._ID, Telephony.Mms.Part.CONTENT_TYPE, Telephony.Mms.Part._DATA, Telephony.Mms.Part.TEXT), "mid=" + messageID, null, null)
 
                     if (!partCursor.moveToFirst()) {
+                        currentID++
                         continue
                     }
 
@@ -153,36 +156,20 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                                     type = MmsType.TEXT,
                                     data = body)
                             }
-                            "image/png" -> {
+                            "image/png", "image/bmp", "image/jpeg", "image/jpg", "image/gif" -> {
                                 MmsData(
                                         type = MmsType.IMAGE,
-                                        data = "data:image/png;base64, " + b64EncodePart(partID, cr))
-
-                            }
-                            "image/bmp" -> {
-                                MmsData(
-                                        type = MmsType.IMAGE,
-                                        data = "data:image/bmp;base64, " + b64EncodePart(partID, cr))
-
-                            }
-                            "image/jpeg", "image/jpg" -> {
-                                MmsData(
-                                    type = MmsType.IMAGE,
-                                        data = "data:image/jpeg;base64, " + b64EncodePart(partID, cr))
-                            }
-                            "image/gif" -> {
-                                MmsData(
-                                    type = MmsType.IMAGE,
-                                        data = "data:image/gif;base64, " + b64EncodePart(partID, cr))
+                                        data = "content://mms/part/" + partID)
                             }
                             else -> null
                         }
 
                         if (messageData != null) {
                             messages.add(Message(
+                                    id = messageID,
                                     person = person,
                                     read = read,
-                                    threadID = threadID,
+                                    threadID = parameters.threadID,
                                     timestamp = timestamp,
                                     data = messageData
                             ))
@@ -205,9 +192,10 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                         val p = messageCursor.getInt(0)
 
                         messages.add(Message(
+                                id = currentID,
                                 person= if (p == 0) Person(0, "") else Person(numberToContact(num, cr)?: -1, num),
                                 read = messageCursor.getInt(2) != 0,
-                                threadID = threadID,
+                                threadID = parameters.threadID,
                                 timestamp = messageCursor.getLong(3),
                                 data = SmsData(messageCursor.getString(4))
                         ))
@@ -216,7 +204,8 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                     messageCursor.close()
                 }
 
-            } while (cursor.moveToNext())
+                currentID++
+            } while (cursor.moveToNext() && currentID < to)
 
             cursor.close()
 

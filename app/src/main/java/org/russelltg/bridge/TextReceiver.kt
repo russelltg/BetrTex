@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 
-class TextReceiver(private val service: ServerService) : BroadcastReceiver() {
+class SmsReceiver(private val service: ServerService) : BroadcastReceiver() {
 
     override fun onReceive(ctx: Context?, intent: Intent?) {
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -31,8 +31,9 @@ class TextReceiver(private val service: ServerService) : BroadcastReceiver() {
             }
 
             service.server?.textReceived(Message(
+                    id = -1, // TODO: get actual ID
                     person = Person(cursor.getLong(0), cursor.getString(1)),
-                    threadid = cursor.getInt(2),
+                    threadID = cursor.getInt(2),
                     timestamp = cursor.getLong(3),
                     read = cursor.getInt(4) != 0,
                     data = SmsData(cursor.getString(5))))
@@ -42,7 +43,12 @@ class TextReceiver(private val service: ServerService) : BroadcastReceiver() {
             e.printStackTrace()
             return
         }
+    }
+}
 
+class MmsReceiver(private val service: ServerService): BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
 
     }
 }
+

@@ -11,12 +11,15 @@ import android.support.v4.app.NotificationCompat
 import com.github.salomonbrys.kotson.jsonObject
 import com.github.salomonbrys.kotson.set
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import java.lang.Exception
 import java.net.InetSocketAddress
+import kotlin.system.measureNanoTime
+import kotlin.system.measureTimeMillis
 
 private const val CONNECTION_ACCEPTED = "BRIDGE_CONNECTION_ACCEPTED"
 private const val CONNECTION_REJECTED = "BRIDGE_CONNECTION_REJECT"
@@ -86,6 +89,7 @@ class WsServer(addr : InetSocketAddress, val service: ServerService) : WebSocket
         commands["list-conversations"] = ListConversationsCommand(service)
         commands["contact-info"] = GetContactInfo(service)
         commands["get-messages"] = GetMessagesCommand(service)
+        commands["get-image"] = GetImage(service)
     }
 
     // send new texts to the client
@@ -187,8 +191,13 @@ class WsServer(addr : InetSocketAddress, val service: ServerService) : WebSocket
             val cmd = commands[method]
 
             try {
-                val returnMessage = cmd?.process(jsonData.get("params"))
 
+                // time processing
+                var returnMessage: JsonElement? = null
+
+                val time = measureTimeMillis {
+                    returnMessage = cmd?.process(jsonData.get("params"))
+                }
 
                 if (returnMessage != null) {
 
@@ -196,6 +205,7 @@ class WsServer(addr : InetSocketAddress, val service: ServerService) : WebSocket
                     obj["jsonrpc"] = 2.0
                     obj["result"] = returnMessage
                     obj["id"] = id
+                    obj["handledin"] = time
 
                     conn.send(Gson().toJson(obj))
                 }
