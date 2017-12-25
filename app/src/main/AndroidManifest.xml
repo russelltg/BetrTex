@@ -2,15 +2,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.russelltg.bridge">
 
+    <!-- send and receive SMS/MMS -->
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_MMS"/>
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+    <!-- read existing sms-mms -->
     <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- MMS network -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+
+    <!-- read contacts for displaying names etc -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- start service on boot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +29,8 @@
         android:roundIcon="@drawable/icon"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- Main display activity -->
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,18 +39,30 @@
             </intent-filter>
         </activity>
 
+        <!-- Service serve WS and do all the heavy lifting -->
         <service
             android:name=".ServerService"
             android:enabled="true"
             android:exported="false" />
 
-        <service android:name="com.android.mms.transaction.TransactionService"/>
-
+        <!-- Start the service on boot -->
         <receiver android:name=".ServiceStarter">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <provider android:name=".MmsPduContentProvider"
+            android:grantUriPermissions="true"
+            android:exported="false"
+            android:authorities="org.russelltg.bridge.mms" />
+
+        <provider android:name=".IncomingMmsImageContentProvider"
+            android:grantUriPermissions="true"
+            android:exported="false"
+            android:authorities="org.russelltg.bridge.mms-image" />
+
 
     </application>
 

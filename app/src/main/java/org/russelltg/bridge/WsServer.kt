@@ -18,7 +18,6 @@ import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import java.lang.Exception
 import java.net.InetSocketAddress
-import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 private const val CONNECTION_ACCEPTED = "BRIDGE_CONNECTION_ACCEPTED"

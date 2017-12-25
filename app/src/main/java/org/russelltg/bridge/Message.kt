@@ -2,7 +2,12 @@ package org.russelltg.bridge
 
 import com.google.gson.annotations.SerializedName
 
-sealed class MessageData
+sealed class MessageData {
+    data class Text(val message: String) : MessageData
+    data class Image(
+            val uri 
+    )
+}
 
 data class SmsData(val message: String) : MessageData()
 enum class MmsType {
@@ -18,8 +23,6 @@ data class Person (
 )
 
 data class Message (
-        // the ID of the message in the conversation. 0 would be the first message
-        val id: Int,
         val person: Person,
         @SerializedName("threadid")
         val threadID: Int,

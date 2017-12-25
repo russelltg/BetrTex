@@ -34,9 +34,10 @@ class MainActivity : Activity() {
 
         if (!requiredPermissions.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) {
             requestPermissions(requiredPermissions, 123)
+        } else {
+            startService(Intent(this, ServerService::class.java))
         }
 
-        startService(Intent(this, ServerService::class.java))
 
         // get IP
         val ip = getIP()
@@ -46,5 +47,11 @@ class MainActivity : Activity() {
         }
 
         portView.text = resources.getString(R.string.port, 14563)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?) {
+        if (requestCode == 123) {
+            startService(Intent(this, ServerService::class.java))
+        }
     }
 }

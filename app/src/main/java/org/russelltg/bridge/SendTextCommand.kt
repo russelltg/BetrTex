@@ -80,26 +80,7 @@ class SendTextCommand(service: ServerService): Command(service) {
         receiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
 
-                val uri = intent?.extras?.getString("uri")
 
-                val cr = context?.contentResolver!!
-
-                val c = cr.query(Uri.parse(uri),
-                        arrayOf(Telephony.Sms.Inbox.PERSON, Telephony.Sms.ADDRESS, Telephony.Sms.Inbox.THREAD_ID, Telephony.Sms.Inbox.DATE_SENT, Telephony.Sms.Inbox.READ, Telephony.Sms.Inbox.BODY),
-                        null, null, null)
-
-
-                if (c!!.moveToFirst()) {
-                    service.server?.textReceived(Message(
-                            id = -1, // TODO: get the actual ID
-                            person = Person(c.getLong(0), c.getString(1)),
-                            threadID = c.getInt(2),
-                            timestamp = c.getLong(3),
-                            read = c.getInt(4) != 0,
-                            data = SmsData(c.getString(5))))
-                }
-
-                c.close()
 
             }
         }
