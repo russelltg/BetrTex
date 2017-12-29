@@ -107,14 +107,16 @@ fun messagesFromMms(cr: ContentResolver, messageID: Int): Array<Message> {
             "text/plain" -> {
                 val body = if (data != null) getMmsText(partID, cr) else partCursor.getString(3)
 
-                MmsData(
-                        type = MmsType.TEXT,
-                        data = body)
+                MessageData.Text(
+                        message = body)
             }
             "image/png", "image/bmp", "image/jpeg", "image/jpg", "image/gif" -> {
-                MmsData(
-                        type = MmsType.IMAGE,
-                        data = "content://mms/part/" + partID)
+                MessageData.Image (
+                        image = ImageLocation(
+                            uri = "content://mms/part/" + partID,
+                            width = 0, // TODO:
+                            height = 0)
+                )
             }
             else -> null
         }

@@ -42,7 +42,7 @@ class SmsReceiver(private val service: ServerService) : BroadcastReceiver() {
                     threadID = cursor.getInt(2),
                     timestamp = cursor.getLong(3),
                     read = cursor.getInt(4) != 0,
-                    data = SmsData(cursor.getString(5))))
+                    data = MessageData.Text(message = cursor.getString(5))))
 
             cursor.close()
         } catch (e: Exception) {
@@ -159,7 +159,7 @@ class MmsReceiver(private val service: ServerService): BroadcastReceiver() {
 
                                 Message(
                                         person = person,
-                                        data = MmsData(type = MmsType.TEXT, data = message),
+                                        data = MessageData.Text(message = message),
                                         threadID = threadid,
                                         read = false,
                                         timestamp = retreivedPdu.date
@@ -178,7 +178,12 @@ class MmsReceiver(private val service: ServerService): BroadcastReceiver() {
                                 Message(
                                         person = person,
                                         timestamp = retreivedPdu.date,
-                                        data = MmsData(type = MmsType.IMAGE, data = uri.toString()),
+                                        data = MessageData.Image(
+                                                image = ImageLocation(
+                                                    uri = uri.toString(),
+                                                    width = 0, // TODO:
+                                                    height = 0)
+                                        ),
                                         read = false,
                                         threadID = threadid
                                 )

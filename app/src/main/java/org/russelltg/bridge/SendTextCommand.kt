@@ -4,17 +4,17 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.Telephony
 import android.util.Base64
-import com.google.gson.Gson
+import com.github.salomonbrys.kotson.fromJson
+import com.github.salomonbrys.kotson.get
+import com.github.salomonbrys.kotson.jsonDeserializer
+import com.github.salomonbrys.kotson.registerTypeAdapter
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 import com.klinker.android.send_message.Settings
 import com.klinker.android.send_message.Transaction
-import java.util.*
 
 
 /**
@@ -60,6 +60,17 @@ class SendTextCommand(service: ServerService): Command(service) {
         ) : NewMessageData()
     }
 
+    val deserializer = jsonDeserializer {
+        assert(it.type === NewMessageData::class)
+
+        if (it.json.asJsonObject["message"] != null) {
+            // it is a Text
+            NewMessageData.Text(it.json["message"].toString())
+        } else {
+            NewMessageData.Image(base64Image = it.json["base64_image"].toString(), mimeType = it.json["mime_type"].toString())
+        }
+    }
+
     data class SendTextParams (
 
             // The thread ID (_id in content://mms-sms/conversations)
@@ -96,9 +107,10 @@ class SendTextCommand(service: ServerService): Command(service) {
 
     override fun process(params: JsonElement): JsonElement? {
 
+        val gson = GsonBuilder().registerTypeAdapter<NewMessageData>(deserializer).create()
 
         // from json
-        val msg = Gson().fromJson(params, SendTextParams::class.java)
+        val msg = gson.fromJson<SendTextParams>(params)
 
         val s = Settings()
 

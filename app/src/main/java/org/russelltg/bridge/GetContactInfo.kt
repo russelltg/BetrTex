@@ -9,7 +9,7 @@ class GetContactInfo(service: ServerService) : Command(service) {
 
     data class ContactInfo(
             val name: String,
-            val image: String
+            val image: ImageLocation
     )
 
     override fun process(params: JsonElement): JsonElement? {
@@ -35,7 +35,11 @@ class GetContactInfo(service: ServerService) : Command(service) {
                 imageUri = contactsCursor.getString(1)
             }
 
-            val contactInfo = ContactInfo(name = name, image = imageUri)
+            val contactInfo = ContactInfo(name = name, image = ImageLocation(
+                    uri = imageUri,
+                    width = 0, // TODO:
+                    height = 0
+            ))
 
             // free the cursor
             contactsCursor.close()
@@ -43,6 +47,10 @@ class GetContactInfo(service: ServerService) : Command(service) {
             return Gson().toJsonTree(contactInfo)
         }
 
-        return Gson().toJsonTree(ContactInfo(name = "", image = ""))
+        return Gson().toJsonTree(ContactInfo(name = "", image = ImageLocation(
+                uri = "",
+                width = 0,
+                height = 0
+        )))
     }
 }

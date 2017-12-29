@@ -27,7 +27,7 @@ class ServerService : Service() {
 
         // start ws server
         try {
-            server = WsServer(InetSocketAddress("0.0.0.0", 14566), this)
+            server = WsServer(InetSocketAddress("0.0.0.0", 14563), this)
 
             server?.start()
 

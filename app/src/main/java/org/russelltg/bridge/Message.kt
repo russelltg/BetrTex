@@ -3,18 +3,14 @@ package org.russelltg.bridge
 import com.google.gson.annotations.SerializedName
 
 sealed class MessageData {
-    data class Text(val message: String) : MessageData
+    data class Text(
+            val type: String = "text",
+            val message: String) : MessageData()
     data class Image(
-            val uri 
-    )
+            val type: String = "image",
+            val image: ImageLocation
+    ) : MessageData()
 }
-
-data class SmsData(val message: String) : MessageData()
-enum class MmsType {
-    TEXT,
-    IMAGE
-}
-data class MmsData(val type: MmsType, val data: String) : MessageData()
 
 data class Person (
         @SerializedName("contactid")

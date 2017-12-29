@@ -74,7 +74,7 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
                                 read = messageCursor.getInt(2) != 0,
                                 threadID = parameters.threadID,
                                 timestamp = messageCursor.getLong(3),
-                                data = SmsData(messageCursor.getString(4))
+                                data = MessageData.Text(message = messageCursor.getString(4))
                         ))
                     }
 
