@@ -9,7 +9,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.net.NetworkInterface
 import java.util.Collections
 
-fun getIP(): String? {
+private fun getIP(): String? {
     for (inter in NetworkInterface.getNetworkInterfaces()) {
         for (address in Collections.list(inter.inetAddresses)) {
             if (!address.isLoopbackAddress) {

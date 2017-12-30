@@ -8,7 +8,7 @@ sealed class MessageData {
             val message: String) : MessageData()
     data class Image(
             val type: String = "image",
-            val image: ImageLocation
+            val image: String
     ) : MessageData()
 }
 

@@ -1,16 +1,12 @@
 package org.russelltg.bridge
 
 import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.net.Uri
 import android.provider.Telephony
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.lang.Integer.min
 
 
 class GetMessagesCommand(service: ServerService) : Command(service) {
@@ -22,7 +18,6 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
             val to: Int
     )
 
-    @SuppressLint("NewApi")
     override fun process(params: JsonElement): JsonElement? {
 
         val parameters = Gson().fromJson<Params>(params)
@@ -36,7 +31,7 @@ class GetMessagesCommand(service: ServerService) : Command(service) {
         if (cursor.moveToFirst()) {
 
             // clamp the end
-            val to = Integer.max(parameters.to, cursor.count)
+            val to = Integer.min(parameters.to, cursor.count)
 
             // make sure the range is valid
             if (parameters.from > to) {

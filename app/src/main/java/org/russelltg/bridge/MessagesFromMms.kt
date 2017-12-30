@@ -112,10 +112,7 @@ fun messagesFromMms(cr: ContentResolver, messageID: Int): Array<Message> {
             }
             "image/png", "image/bmp", "image/jpeg", "image/jpg", "image/gif" -> {
                 MessageData.Image (
-                        image = ImageLocation(
-                            uri = "content://mms/part/" + partID,
-                            width = 0, // TODO:
-                            height = 0)
+                        image = "content://mms/part/" + partID
                 )
             }
             else -> null

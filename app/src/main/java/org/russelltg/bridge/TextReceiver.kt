@@ -179,10 +179,7 @@ class MmsReceiver(private val service: ServerService): BroadcastReceiver() {
                                         person = person,
                                         timestamp = retreivedPdu.date,
                                         data = MessageData.Image(
-                                                image = ImageLocation(
-                                                    uri = uri.toString(),
-                                                    width = 0, // TODO:
-                                                    height = 0)
+                                                image =  uri.toString()
                                         ),
                                         read = false,
                                         threadID = threadid
